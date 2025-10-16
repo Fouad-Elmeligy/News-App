@@ -2,13 +2,15 @@
 
 package com.example.newsapp.ui.theme.Screens.News
 
-import android.R
+
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -22,10 +24,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -37,40 +38,47 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.example.newsapp.API.Model.SourcesItemDM
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.newsapp.API.ApiManager
 import com.example.newsapp.API.Model.ArticlesItem
-import com.example.newsapp.API.Model.NewsResponse
-import com.example.newsapp.API.Model.SourcesResponse
 import com.example.newsapp.ui.theme.gray
-import kotlinx.coroutines.coroutineScope
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.delay
+import androidx.core.net.toUri
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 
 @Composable
-fun NewsScreen(categoryApiId: String, modifier: Modifier = Modifier) {
-
+fun NewsScreen(categoryApiId: String) {
+    val viewModel: NewsViewModel = viewModel()
     Column(modifier = Modifier.fillMaxSize()) {
-        var Articles = remember { mutableStateListOf<ArticlesItem>() }
-        SourcesTabRow(categoryApiId) {
-            Articles.clear()
-            Articles.addAll(it)
+        var sourceId by remember { mutableStateOf("") }
+        SourcesTabRow(categoryApiId = categoryApiId, viewModel = viewModel) {
+            sourceId = it
         }
         Spacer(modifier = Modifier.padding(top = 15.dp))
-        NewsList(newsList = Articles)
+        if (sourceId.isNotEmpty() || sourceId.isBlank()) {
+            Log.e("observe", "NewsScreen: bofore NewsList call")
+            NewsList(sourceId, viewModel)
+        } else {
+            Log.e("NewsScreen", "EmptySourceId ")
+        }
+
 
     }
 }
@@ -78,31 +86,34 @@ fun NewsScreen(categoryApiId: String, modifier: Modifier = Modifier) {
 @Composable
 fun SourcesTabRow(
     categoryApiId: String,
-    modifier: Modifier = Modifier,
-    onNewsListUpdated: (List<ArticlesItem>) -> Unit
+    viewModel: NewsViewModel = viewModel(),
+    onSourceClick: (String) -> Unit
 ) {
-    var sources = remember { mutableStateListOf<SourcesItemDM>() }
+    var selectedIndex by remember { mutableIntStateOf(0) }
+    var isInitialized by remember { mutableStateOf(false) }
 
-
-    var selectedIndex by remember { mutableStateOf(0) }
     LaunchedEffect(categoryApiId) {
-        getSources(categoryApiId) {
-            sources.clear()
-            sources.addAll(it)
-            if (it.isNotEmpty()) {
-                getNewsBySource(sources[0].id ?: "") {
-                    onNewsListUpdated(it)
-                }
-            }
+        viewModel.sourcesList.clear()
+       val getSource=async { viewModel.getSources(categoryApiId) }
+        while (viewModel.sourcesList.isEmpty()){
+            delay(1000)
+        }
+
+        Log.e("sources", "SourcesTabRow: ${viewModel.sourcesList[0]}")
+        if (viewModel.sourcesList.isNotEmpty() && !isInitialized) {
+            onSourceClick(viewModel.sourcesList[0].id ?: "")
+            isInitialized = true
         }
     }
+
     LazyRow {
-        itemsIndexed(sources) { index, item ->
+        itemsIndexed(viewModel.sourcesList) { index, item ->
             SourcesItem(item, index, selectedIndex) { clickedIndex, sourcesItem ->
                 selectedIndex = clickedIndex
-                getNewsBySource(sourcesItem.id ?: "") {
-                    onNewsListUpdated(it)
-                }
+
+                onSourceClick(sourcesItem.id ?: "")
+                Log.e("LazyRow", "SourcesTabRow: ${sourcesItem.id}")
+
             }
         }
     }
@@ -113,10 +124,8 @@ fun SourcesItem(
     sourcesItemDM: SourcesItemDM,
     index: Int,
     selectedIndex: Int,
-    modifier: Modifier = Modifier,
     onSourceClickListener: (Int, SourcesItemDM) -> Unit
 ) {
-    var isSelected by remember { mutableStateOf(index == selectedIndex) }
     if (index == selectedIndex) {
         Text(
             text = sourcesItemDM.name ?: "",
@@ -141,71 +150,62 @@ fun SourcesItem(
     }
 }
 
-fun getSources(categoryApiId: String, onResponse: (List<SourcesItemDM>) -> Unit) {
-    ApiManager.getService().getSources(categoryApiId = categoryApiId)
-        .enqueue(object : Callback<SourcesResponse> {
-            override fun onResponse(
-                call: Call<SourcesResponse?>,
-                response: Response<SourcesResponse?>
-            ) {
-                if (response.isSuccessful) {
-                    Log.e("ResponseState", "onResponse: ${response.body()?.status}")
-                    Log.e("ResponseSources", "onResponse: ${response.body()?.sources}")
-                    onResponse(response.body()?.sources ?: listOf())
-
-                } else {
-                    Log.e("ResponseError", "onResponse: ${response.code()}")
-
-
-                }
-            }
-
-            override fun onFailure(call: Call<SourcesResponse?>, t: Throwable) {
-                Log.e("ResponseState", "onResponse: ${t.message}")
-
-            }
-        })
-}
-
-fun getNewsBySource(SourceId: String, onResponse: (List<ArticlesItem>) -> Unit) {
-    ApiManager.getService().getNewsBySource(sourcesId = SourceId)
-        .enqueue(object : Callback<NewsResponse> {
-            override fun onResponse(
-                call: Call<NewsResponse?>,
-                response: Response<NewsResponse?>
-            ) {
-                if (response.isSuccessful) {
-                    onResponse(response.body()?.articles ?: listOf())
-                    Log.e("ResponseState", "onResponse: ${response.body()?.status}")
-                    Log.e("ResponseArticles", "onResponse: ${response.body()?.articles}")
-                }
-            }
-
-            override fun onFailure(
-                call: Call<NewsResponse?>,
-                t: Throwable
-            ) {
-            }
-
-        })
-}
 
 @Composable
-fun NewsList(newsList: List<ArticlesItem>) {
-    if (newsList.isEmpty()) {
-        Text(
-            text = "Loading News....",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 25.sp
-        )
-    } else {
-        LazyColumn(
-            Modifier
-                .fillMaxSize()
-                .padding(top = 5.dp)
+fun NewsList(sourceId: String, viewModel: NewsViewModel) {
+    val newsList = viewModel.getPagedNews(sourceId)
+    Log.e("NewsList", "NewsList: bofore loadSate")
+    val loadState = newsList.loadState.refresh
+    if (sourceId.isEmpty()) return
+    when (loadState) {
+        is LoadState.Loading -> Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(newsList) { ArticlesItem ->
-                NewsCard(articlesItem = ArticlesItem)
+            CircularProgressIndicator()
+            Text(
+                text = "Loading News....",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+        }
+
+        is LoadState.Error -> {
+            Text(
+                text = "Error: ${loadState.error.message}",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 25.sp
+            )
+            Log.e("Error", "NewsList: Error: ${loadState.error.message}")
+        }
+
+        else -> {
+            if (newsList.itemCount == 0) {
+                Text(
+                    text = "No news available",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 5.dp)
+                ) {
+                    items(newsList.itemCount) { index ->
+                        newsList[index]?.let {
+
+                                articlesItem ->
+                            Log.e("newsListIndex", "NewsList: ${newsList[index]}")
+                            NewsCard(articlesItem = articlesItem)
+                        }
+                    }
+
+                }
             }
         }
     }
@@ -213,7 +213,7 @@ fun NewsList(newsList: List<ArticlesItem>) {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun NewsCard(modifier: Modifier = Modifier, articlesItem: ArticlesItem) {
+fun NewsCard(articlesItem: ArticlesItem) {
     var selectedArticle by remember { mutableStateOf<ArticlesItem?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     if (showBottomSheet && selectedArticle != null) {
@@ -231,12 +231,12 @@ fun NewsCard(modifier: Modifier = Modifier, articlesItem: ArticlesItem) {
                 1.dp, MaterialTheme.colorScheme.onBackground,
                 RoundedCornerShape(16.dp)
             ),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
-   , onClick = {
-       selectedArticle=articlesItem
-            showBottomSheet =true
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+        onClick = {
+            selectedArticle = articlesItem
+            showBottomSheet = true
         }
-        ) {
+    ) {
         GlideImage(
             articlesItem.urlToImage ?: "",
             contentDescription = null,
@@ -297,26 +297,43 @@ fun NewsBottomSheet(
             shape = RoundedCornerShape(16.dp), modifier = Modifier.padding(16.dp)
 
 
-            )
+        )
         {
             GlideImage(
                 articlesItem.urlToImage ?: "",
                 contentDescription = null,
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
-                    .fillMaxWidth().fillMaxHeight(0.3f)
-                    .clip(shape = RoundedCornerShape(16.dp)), contentScale = ContentScale.FillHeight
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.3f)
+                    .clip(shape = RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.FillHeight
 
             )
             Text(
                 text = articlesItem.title ?: "",
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
-                modifier = Modifier.padding( 8.dp),
+                modifier = Modifier.padding(8.dp),
                 color = MaterialTheme.colorScheme.background
             )
+            val context = LocalContext.current
             Button(
-                onClick = {},
+                onClick = {
+                    try {
+
+                        val intent = Intent(Intent.ACTION_VIEW, articlesItem.url?.toUri())
+                        context.startActivity(intent)
+                        showBottomSheet = false
+                    } catch (e: Exception) {
+                        Toast.makeText(
+                            context,
+                            "الرابط غير صالح أو لا يمكن فتحه",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp, vertical = 7.dp),
@@ -327,10 +344,17 @@ fun NewsBottomSheet(
                     disabledContainerColor = Color(0)
                 ), shape = RoundedCornerShape(16.dp)
             ) {
-                Text(text = "View Full Article", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 10.dp))
+                Text(
+                    text = "View Full Article",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
             }
         }
     }
 }
+
+
 
 

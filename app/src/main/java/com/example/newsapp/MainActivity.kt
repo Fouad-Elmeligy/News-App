@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable<NewsDestination> {
                             val category = it.toRoute<NewsDestination>()
-                            NewsScreen(category.categoryApi)
+                            NewsScreen(categoryApiId = category.categoryApi)
                             screenName.value = category.categoryApi
                             Log.e("ScreenName", "${category.categoryApi}")
                         }
