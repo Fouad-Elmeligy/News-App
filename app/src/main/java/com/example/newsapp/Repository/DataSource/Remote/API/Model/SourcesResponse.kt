@@ -1,5 +1,7 @@
-package com.example.newsapp.API.Model
+package com.example.newsapp.Repository.DataSource.Remote.API.Model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
 data class SourcesResponse(
@@ -12,6 +14,7 @@ data class SourcesResponse(
     val status: String? = null
 )
 
+@Entity(tableName = "sources")
 data class SourcesItemDM(
     @field:SerializedName("country")
     val country: String? = null,
@@ -25,8 +28,9 @@ data class SourcesItemDM(
     @field:SerializedName("language")
     val language: String? = null,
 
+    @PrimaryKey(autoGenerate = false)
     @field:SerializedName("id")
-    val id: String? = null,
+    val id: String,
 
     @field:SerializedName("category")
     val category: String? = null,

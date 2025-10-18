@@ -1,8 +1,7 @@
-package com.example.newsapp.API
+package com.example.newsapp.Repository.DataSource.Remote.API
 
-import com.example.newsapp.API.Model.NewsResponse
-import com.example.newsapp.API.Model.SourcesResponse
-import retrofit2.Call
+import com.example.newsapp.Repository.DataSource.Remote.API.Model.NewsResponse
+import com.example.newsapp.Repository.DataSource.Remote.API.Model.SourcesResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Query

@@ -1,11 +1,10 @@
-package com.example.newsapp.Paging
+package com.example.newsapp.Repository.Paging
 
 import android.util.Log
 import androidx.paging.PagingSource
-import androidx.paging.PagingSource.LoadResult
 import androidx.paging.PagingState
-import com.example.newsapp.API.ApiManager
-import com.example.newsapp.API.Model.ArticlesItem
+import com.example.newsapp.Repository.DataSource.Remote.API.ApiManager
+import com.example.newsapp.Repository.DataSource.Remote.API.Model.ArticlesItem
 
 class NewsPagingSource(val sourceId: String) : PagingSource<Int, ArticlesItem>() {
     companion object {

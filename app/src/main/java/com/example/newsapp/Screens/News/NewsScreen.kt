@@ -1,10 +1,9 @@
 @file:Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
 
-package com.example.newsapp.ui.theme.Screens.News
+package com.example.newsapp.Screens.News
 
 
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.border
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -36,7 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.example.newsapp.API.Model.SourcesItemDM
+import com.example.newsapp.Repository.DataSource.Remote.API.Model.SourcesItemDM
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,18 +48,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startActivity
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.newsapp.API.Model.ArticlesItem
+import com.example.newsapp.Repository.DataSource.Remote.API.Model.ArticlesItem
 import com.example.newsapp.ui.theme.gray
-import kotlinx.coroutines.delay
 import androidx.core.net.toUri
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 
 @Composable
 fun NewsScreen(categoryApiId: String) {
@@ -91,32 +84,45 @@ fun SourcesTabRow(
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     var isInitialized by remember { mutableStateOf(false) }
-
+    val sourceState = viewModel.sourcesResource.value
+    val context = LocalContext.current
     LaunchedEffect(categoryApiId) {
-        viewModel.sourcesList.clear()
-       val getSource=async { viewModel.getSources(categoryApiId) }
-        while (viewModel.sourcesList.isEmpty()){
-            delay(1000)
-        }
-
-        Log.e("sources", "SourcesTabRow: ${viewModel.sourcesList[0]}")
-        if (viewModel.sourcesList.isNotEmpty() && !isInitialized) {
-            onSourceClick(viewModel.sourcesList[0].id ?: "")
-            isInitialized = true
-        }
+        viewModel.getSources(categoryApiId, context)
     }
+    LaunchedEffect(sourceState) {
+        if (sourceState is Resource.Success && sourceState.data.isNotEmpty() && !isInitialized) {
+            val sources = sourceState.data
+            onSourceClick(sources[0].id ?: "")
+            isInitialized
+        }
 
-    LazyRow {
-        itemsIndexed(viewModel.sourcesList) { index, item ->
-            SourcesItem(item, index, selectedIndex) { clickedIndex, sourcesItem ->
-                selectedIndex = clickedIndex
+    }
+    when (sourceState) {
+        is Resource.Loading -> {
+            CircularProgressIndicator(color = Color.Cyan, strokeWidth = 10.dp)
+        }
 
-                onSourceClick(sourcesItem.id ?: "")
-                Log.e("LazyRow", "SourcesTabRow: ${sourcesItem.id}")
+        is Resource.Error -> {
+            val context = LocalContext.current
+            Toast.makeText(context, sourceState.errorMessage, Toast.LENGTH_SHORT).show()
+        }
 
+        is Resource.Success -> {
+            LazyRow {
+                itemsIndexed(sourceState.data) { index, item ->
+                    SourcesItem(item, index, selectedIndex) { clickedIndex, sourcesItem ->
+                        selectedIndex = clickedIndex
+
+                        onSourceClick(sourcesItem.id ?: "")
+                        Log.e("LazyRow", "SourcesTabRow: ${sourcesItem.id}")
+
+                    }
+                }
             }
         }
     }
+
+
 }
 
 @Composable
@@ -163,7 +169,7 @@ fun NewsList(sourceId: String, viewModel: NewsViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color.Cyan, strokeWidth = 10.dp)
             Text(
                 text = "Loading News....",
                 color = MaterialTheme.colorScheme.onBackground,

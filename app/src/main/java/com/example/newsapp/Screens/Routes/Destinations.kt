@@ -1,4 +1,4 @@
-package com.example.newsapp.ui.theme.Screens.Routes
+package com.example.newsapp.Screens.Routes
 
 import com.example.newsapp.DataModel.CategoryDM
 import kotlinx.serialization.Serializable

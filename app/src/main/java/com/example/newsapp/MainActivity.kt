@@ -24,28 +24,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.newsapp.API.ApiManager
-import com.example.newsapp.API.Model.SourcesResponse
-import com.example.newsapp.DataModel.CategoryDM
-import com.example.newsapp.ui.theme.Screens.Categories.CategoriesScreen
+import com.example.newsapp.Screens.Categories.CategoriesScreen
 import com.example.newsapp.ui.theme.NewsAppTheme
-import com.example.newsapp.ui.theme.Screens.News.NewsScreen
-import com.example.newsapp.ui.theme.Screens.Routes.CategoriesDestination
-import com.example.newsapp.ui.theme.Screens.Routes.NewsDestination
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.example.newsapp.Screens.News.NewsScreen
+import com.example.newsapp.Screens.Routes.CategoriesDestination
+import com.example.newsapp.Screens.Routes.NewsDestination
 
 class MainActivity : ComponentActivity() {
 
