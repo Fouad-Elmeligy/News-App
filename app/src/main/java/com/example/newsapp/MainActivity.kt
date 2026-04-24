@@ -23,7 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -38,32 +38,33 @@ import com.example.newsapp.ui.theme.NewsAppTheme
 import com.example.newsapp.Screens.News.NewsScreen
 import com.example.newsapp.Screens.Routes.CategoriesDestination
 import com.example.newsapp.Screens.Routes.NewsDestination
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-//LaunchedEffect(Unit) {
-//    getSources()
-//}
+
 
             NewsAppTheme {
                 val navController = rememberNavController()
+                var screenName by remember { mutableStateOf("Home") }
+
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .systemBarsPadding(),
                     topBar = {
                         TopAppBar(
-                            topAppBarTitle = "home",
+                            topAppBarTitle = screenName,
                             onSearchClick = {},
                             onMenuClick = {})
                     }
 
                 ) { innerPadding ->
-                    var screenName = rememberSaveable { mutableStateOf("Home") }
                     NavHost(
                         modifier = Modifier.padding(
                             top = innerPadding.calculateTopPadding(),
@@ -74,13 +75,14 @@ class MainActivity : ComponentActivity() {
                         startDestination = CategoriesDestination,
                     ) {
                         composable<CategoriesDestination> {
+                            screenName = "Home"
                             CategoriesScreen(navController = navController)
                         }
                         composable<NewsDestination> {
                             val category = it.toRoute<NewsDestination>()
                             NewsScreen(categoryApiId = category.categoryApi)
-                            screenName.value = category.categoryApi
-                            Log.e("ScreenName", "${category.categoryApi}")
+                            screenName = category.categoryApi
+                            Log.e("ScreenName", category.categoryApi)
                         }
 
 
@@ -102,19 +104,17 @@ class MainActivity : ComponentActivity() {
         onMenuClick: () -> Unit,
         onSearchClick: () -> Unit
     ) {
-        val title by remember { mutableStateOf(topAppBarTitle) }
+
         CenterAlignedTopAppBar(
             title = {
                 Text(
-                    text = title,
+                    text = topAppBarTitle,
                     fontWeight = FontWeight.Bold, fontSize = 25.sp
                 )
             },
             //Menu Icon
             navigationIcon = {
-                IconButton(onClick = {
-                    onMenuClick
-                }) {
+                IconButton(onClick = onMenuClick ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = null, modifier = Modifier.size(30.dp)
@@ -123,9 +123,7 @@ class MainActivity : ComponentActivity() {
             },
             //Search Icon
             actions = {
-                IconButton(onClick = {
-                    onSearchClick
-                }) {
+                IconButton(onClick = onSearchClick ) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = null,
@@ -145,10 +143,4 @@ class MainActivity : ComponentActivity() {
         )
     }
 }
-
-//@Preview(showSystemUi = true)
-//@Composable
-//private fun topAppprev() {
-//    TopAppBar("Home", onMenuClick = {}, onSearchClick = {})
-//}
 

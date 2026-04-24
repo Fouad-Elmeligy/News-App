@@ -8,4 +8,4 @@ object CategoriesDestination
 
 
 @Serializable
-data class NewsDestination(val categoryApi: String,val title: Int)
+data class NewsDestination(val categoryApi: String)

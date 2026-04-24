@@ -2,8 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.devtools.ksp")
-    kotlin("plugin.serialization") version "2.0.21"
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -29,6 +30,13 @@ android {
             )
         }
     }
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+            )
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -44,15 +52,19 @@ android {
 dependencies {
 
 
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    implementation(project(":Domain"))
+    implementation (libs.converter.gson)
+    implementation(libs.retrofit)
     implementation(libs.androidx.room.runtime)
-
-
+    implementation(project(":Data"))
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation (libs.compose)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.retrofit)
-    implementation (libs.converter.gson)
+
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -66,6 +78,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime.ktx)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

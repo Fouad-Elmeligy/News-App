@@ -67,11 +67,11 @@ fun CategoryList(modifier: Modifier = Modifier, navController: NavHostController
         itemsIndexed(CategoryDM.getCategoriesList()) { index, item ->
             if (index % 2 == 0)
                 this@LazyColumn.IsEvenIndex(item, onCategoryClick = {
-                    navController.navigate(NewsDestination(item.apiId ?: "", item.title ?: 0))
+                    navController.navigate(NewsDestination(item.apiId ?: ""))
                 })
             else
                 this@LazyColumn.IsOddIndex(item, onCategoryClick = {
-                    navController.navigate(NewsDestination(item.apiId ?: "", item.title ?: 0))
+                    navController.navigate(NewsDestination(item.apiId ?: ""))
                 })
 
         }

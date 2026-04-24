@@ -2,7 +2,7 @@
 
 package com.example.newsapp.Screens.News
 
-
+import com.example.domain.Utils.Base.Resource
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
@@ -32,9 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import com.example.newsapp.Repository.DataSource.Remote.API.Model.SourcesItemDM
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,24 +48,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.newsapp.Repository.DataSource.Remote.API.Model.ArticlesItem
 import com.example.newsapp.ui.theme.gray
 import androidx.core.net.toUri
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.compose.collectAsLazyPagingItems
+import com.example.domain.Entities.News.ArticlesItemEntity
+import com.example.domain.Entities.News.SourcesItemEntity
 
 @Composable
 fun NewsScreen(categoryApiId: String) {
-    val viewModel: NewsViewModel = viewModel()
+    val viewModel: NewsViewModel = hiltViewModel()
     Column(modifier = Modifier.fillMaxSize()) {
         var sourceId by remember { mutableStateOf("") }
         SourcesTabRow(categoryApiId = categoryApiId, viewModel = viewModel) {
             sourceId = it
         }
         Spacer(modifier = Modifier.padding(top = 15.dp))
-        if (sourceId.isNotEmpty() || sourceId.isBlank()) {
+        if (sourceId.isNotBlank()) {
             Log.e("observe", "NewsScreen: bofore NewsList call")
             NewsList(sourceId, viewModel)
         } else {
@@ -74,63 +76,75 @@ fun NewsScreen(categoryApiId: String) {
 
 
     }
-}
-
-@Composable
+}@Composable
 fun SourcesTabRow(
     categoryApiId: String,
-    viewModel: NewsViewModel = viewModel(),
+    viewModel: NewsViewModel ,
     onSourceClick: (String) -> Unit
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     var isInitialized by remember { mutableStateOf(false) }
-    val sourceState = viewModel.sourcesResource.value
+    val sourceState by viewModel.sourcesResource.collectAsState()
     val context = LocalContext.current
+
     LaunchedEffect(categoryApiId) {
-        viewModel.getSources(categoryApiId, context)
+        viewModel.getSources(categoryApiId)
+        isInitialized = false
     }
+
     LaunchedEffect(sourceState) {
-        if (sourceState is Resource.Success && sourceState.data.isNotEmpty() && !isInitialized) {
-            val sources = sourceState.data
-            onSourceClick(sources[0].id ?: "")
-            isInitialized
+        if (sourceState is Resource.Success<*> && !isInitialized) {
+            val sources = (sourceState as Resource.Success<List<SourcesItemEntity>>).data
+            if (sources.isNotEmpty()) {
+                onSourceClick(sources[0].id ?: "")
+                isInitialized = true
+            }
+        }
+    }
+    val state = sourceState
+    when ( state) {
+        is Resource.Initial<*> -> {
+            Log.e("SourcesTabRow", "Initial state")
         }
 
-    }
-    when (sourceState) {
-        is Resource.Loading -> {
+        is Resource.Loading<*> -> {
+            Log.e("SourcesTabRow", "Loading state")
             CircularProgressIndicator(color = Color.Cyan, strokeWidth = 10.dp)
         }
 
-        is Resource.Error -> {
-            val context = LocalContext.current
-            Toast.makeText(context, sourceState.errorMessage, Toast.LENGTH_SHORT).show()
+        is Resource.Error<*> -> {
+            Log.e("SourcesTabRow", "Error: ${state.errorMessage}")
+            LaunchedEffect(state.errorMessage) {
+                Toast.makeText(context, state.errorMessage, Toast.LENGTH_SHORT).show()
+            }
         }
 
-        is Resource.Success -> {
-            LazyRow {
-                itemsIndexed(sourceState.data) { index, item ->
-                    SourcesItem(item, index, selectedIndex) { clickedIndex, sourcesItem ->
-                        selectedIndex = clickedIndex
-
-                        onSourceClick(sourcesItem.id ?: "")
-                        Log.e("LazyRow", "SourcesTabRow: ${sourcesItem.id}")
-
+        is Resource.Success<*> -> {
+            val sources = (state as Resource.Success<List<SourcesItemEntity>>).data
+            if (sources.isEmpty()) {
+                Text(text = "No sources", color = Color.Red)
+            } else {
+                LazyRow {
+                    itemsIndexed(sources) { index: Int, item: SourcesItemEntity ->
+                        Log.e("SourcesTabRow", "Item $index: ${item.name}")
+                        SourcesItem(item, index, selectedIndex) { clickedIndex, sourcesItem ->
+                            selectedIndex = clickedIndex
+                            onSourceClick(sourcesItem.id ?: "")
+                        }
                     }
                 }
             }
         }
+
+        else -> {}
     }
-
-
 }
-
 @Composable
 fun SourcesItem(
-    sourcesItemDM: SourcesItemDM,
+    sourcesItemDM: SourcesItemEntity,
     index: Int,
     selectedIndex: Int,
-    onSourceClickListener: (Int, SourcesItemDM) -> Unit
+    onSourceClickListener: (Int, SourcesItemEntity) -> Unit
 ) {
     if (index == selectedIndex) {
         Text(
@@ -159,8 +173,7 @@ fun SourcesItem(
 
 @Composable
 fun NewsList(sourceId: String, viewModel: NewsViewModel) {
-    val newsList = viewModel.getPagedNews(sourceId)
-    Log.e("NewsList", "NewsList: bofore loadSate")
+    val newsList = viewModel.getPagedNews(sourceId).collectAsLazyPagingItems()
     val loadState = newsList.loadState.refresh
     if (sourceId.isEmpty()) return
     when (loadState) {
@@ -206,7 +219,6 @@ fun NewsList(sourceId: String, viewModel: NewsViewModel) {
                         newsList[index]?.let {
 
                                 articlesItem ->
-                            Log.e("newsListIndex", "NewsList: ${newsList[index]}")
                             NewsCard(articlesItem = articlesItem)
                         }
                     }
@@ -219,8 +231,8 @@ fun NewsList(sourceId: String, viewModel: NewsViewModel) {
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun NewsCard(articlesItem: ArticlesItem) {
-    var selectedArticle by remember { mutableStateOf<ArticlesItem?>(null) }
+fun NewsCard(articlesItem: ArticlesItemEntity) {
+    var selectedArticle by remember { mutableStateOf<ArticlesItemEntity?>(null) }
     var showBottomSheet by remember { mutableStateOf(false) }
     if (showBottomSheet && selectedArticle != null) {
         NewsBottomSheet(
@@ -288,7 +300,7 @@ fun NewsCard(articlesItem: ArticlesItem) {
 @Composable
 fun NewsBottomSheet(
     isShowed: Boolean = false,
-    articlesItem: ArticlesItem
+    articlesItem: ArticlesItemEntity
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showBottomSheet by remember { mutableStateOf(isShowed) }
