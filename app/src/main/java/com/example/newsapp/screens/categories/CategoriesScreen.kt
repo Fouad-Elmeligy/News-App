@@ -1,4 +1,4 @@
-package com.example.newsapp.Screens.Categories
+package com.example.newsapp.screens.categories
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.newsapp.DataModel.CategoryDM
 import com.example.newsapp.R
-import com.example.newsapp.Screens.Routes.NewsDestination
+import com.example.newsapp.screens.routes.NewsDestination
 import com.example.newsapp.ui.theme.ViewAllButtonBgColor
 
 @Composable
@@ -95,7 +95,7 @@ fun LazyListScope.IsEvenIndex(item: CategoryDM, onCategoryClick: () -> Unit) {
     ) {
         Row {
             Image(
-                painter = painterResource(item.image ?: R.drawable.ic_launcher_background),
+                painter = painterResource(item.image!!),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth(0.5f),
@@ -151,7 +151,7 @@ fun LazyListScope.IsOddIndex(item: CategoryDM, onCategoryClick: () -> Unit) {
                 OddCategoryButton()
             }
             Image(
-                painter = painterResource(item.image ?: R.drawable.ic_launcher_background),
+                painter = painterResource(item.image!!),
                 contentDescription = null,
                 modifier = Modifier.fillMaxWidth(), contentScale = ContentScale.FillBounds
             )
@@ -162,7 +162,7 @@ fun LazyListScope.IsOddIndex(item: CategoryDM, onCategoryClick: () -> Unit) {
 
 
 @Composable
-fun EvenCategoryButton(text: String = "View All  ", modifier: Modifier = Modifier) {
+fun EvenCategoryButton(text: String = "View All  ") {
     Button(
         onClick = {},
         colors = ButtonColors(
@@ -198,7 +198,7 @@ fun EvenCategoryButton(text: String = "View All  ", modifier: Modifier = Modifie
 }
 
 @Composable
-fun OddCategoryButton(text: String = "View All  ", modifier: Modifier = Modifier) {
+fun OddCategoryButton(text: String = "View All  ") {
     Button(
         onClick = {},
         colors = ButtonColors(
@@ -240,7 +240,7 @@ fun OddCategoryButton(text: String = "View All  ", modifier: Modifier = Modifier
 
 
 @Composable
-fun circleImageButtonColor(modifier: Modifier = Modifier): Color {
+fun circleImageButtonColor(): Color {
     if (isSystemInDarkTheme())
         return Color.Black
     return Color.White

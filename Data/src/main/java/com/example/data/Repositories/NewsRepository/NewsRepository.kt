@@ -1,6 +1,5 @@
 package com.example.data.Repositories.NewsRepository
 
-import android.content.Context
 import androidx.paging.PagingData
 import com.example.data.Utils.NetworkAvailable
 import com.example.domain.Entities.News.ArticlesItemEntity
@@ -10,8 +9,7 @@ import com.example.domain.Repositories.News.NewsRemoteDataSource
 import com.example.domain.Repositories.News.NewsRepository
 import com.example.domain.Utils.Base.Resource
 import kotlinx.coroutines.flow.Flow
-import javax.inject.Inject
-class NewsRepositoryImpl @Inject constructor(
+class NewsRepositoryImpl (
     private val newsLocalDataSource :NewsLocalDataSource,
    private val newsRemoteDataSource :NewsRemoteDataSource,
     private val networkConnection: NetworkAvailable

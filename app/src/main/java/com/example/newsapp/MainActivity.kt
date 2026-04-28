@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,14 +32,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.newsapp.Screens.Categories.CategoriesScreen
+import com.example.newsapp.screens.categories.CategoriesScreen
 import com.example.newsapp.ui.theme.NewsAppTheme
-import com.example.newsapp.Screens.News.NewsScreen
-import com.example.newsapp.Screens.Routes.CategoriesDestination
-import com.example.newsapp.Screens.Routes.NewsDestination
-import dagger.hilt.android.AndroidEntryPoint
+import com.example.newsapp.screens.news.NewsScreen
+import com.example.newsapp.screens.routes.CategoriesDestination
+import com.example.newsapp.screens.routes.NewsDestination
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,8 +57,9 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(
                             topAppBarTitle = screenName,
-                            onSearchClick = {},
-                            onMenuClick = {})
+                            onSearchClick = {
+                            }
+                        )
                     }
 
                 ) { innerPadding ->
@@ -80,10 +78,11 @@ class MainActivity : ComponentActivity() {
                         }
                         composable<NewsDestination> {
                             val category = it.toRoute<NewsDestination>()
-                            NewsScreen(categoryApiId = category.categoryApi)
+                            NewsScreen(categoryApiId = category.categoryApi,navController)
                             screenName = category.categoryApi
                             Log.e("ScreenName", category.categoryApi)
                         }
+
 
 
                     }
@@ -100,8 +99,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun TopAppBar(
         topAppBarTitle: String,
-        modifier: Modifier = Modifier,
-        onMenuClick: () -> Unit,
         onSearchClick: () -> Unit
     ) {
 
@@ -112,15 +109,7 @@ class MainActivity : ComponentActivity() {
                     fontWeight = FontWeight.Bold, fontSize = 25.sp
                 )
             },
-            //Menu Icon
-            navigationIcon = {
-                IconButton(onClick = onMenuClick ) {
-                    Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = null, modifier = Modifier.size(30.dp)
-                    )
-                }
-            },
+
             //Search Icon
             actions = {
                 IconButton(onClick = onSearchClick ) {

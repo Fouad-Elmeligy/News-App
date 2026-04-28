@@ -14,10 +14,9 @@ import com.example.domain.Entities.News.SourcesItemEntity
 import com.example.domain.Repositories.News.NewsRemoteDataSource
 import com.example.domain.Utils.Base.Resource
 import com.google.gson.Gson
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
-class NewsRemoteDateSourceImpl @Inject constructor(private val newsService: NewsService) : NewsRemoteDataSource  {
+class NewsRemoteDateSourceImpl(private val newsService: NewsService) : NewsRemoteDataSource  {
 
     override suspend fun fetchSources(categoryId: String): Resource<List<SourcesItemEntity>> {
 

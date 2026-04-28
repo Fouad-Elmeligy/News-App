@@ -3,17 +3,10 @@ package com.example.data.Repositories.DI.News
 
 import com.example.data.Repositories.NewsRepository.NewsRepositoryImpl
 import com.example.domain.Repositories.News.NewsRepository
-import dagger.Binds
-import dagger.Module
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import org.koin.core.module.dsl.singleOf
+import org.koin.dsl.bind
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-abstract class NewsRepositoryModule {
-
-    @Binds
-    @Singleton
-    abstract fun bindsNewsRepository(newsRepositoryImpl: NewsRepositoryImpl): NewsRepository
+val NewsRepositoryModule = module {
+   singleOf(::NewsRepositoryImpl) bind NewsRepository::class
 }

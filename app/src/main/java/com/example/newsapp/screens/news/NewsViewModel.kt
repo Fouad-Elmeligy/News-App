@@ -1,4 +1,4 @@
-package com.example.newsapp.Screens.News
+package com.example.newsapp.screens.news
 
 import android.util.Log
 
@@ -9,12 +9,9 @@ import androidx.paging.cachedIn
 
 import com.example.domain.Entities.News.ArticlesItemEntity
 import com.example.domain.Entities.News.SourcesItemEntity
-
 import com.example.domain.UseCases.News.GetNewsBySourceUseCase
 import com.example.domain.UseCases.News.GetSourcesUseCase
 import com.example.domain.Utils.Base.Resource
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,8 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-@HiltViewModel
-class NewsViewModel @Inject constructor(
+
+class NewsViewModel(
     private val getNewsBySourceUseCase: GetNewsBySourceUseCase,
     private val getSourcesUseCase: GetSourcesUseCase
 ) : ViewModel() {

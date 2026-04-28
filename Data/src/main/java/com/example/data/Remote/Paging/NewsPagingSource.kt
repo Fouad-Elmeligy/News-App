@@ -5,9 +5,8 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.example.data.Models.News.ArticlesItemModel
 import com.example.data.Remote.API.NewsService
-import javax.inject.Inject
 
-class NewsPagingSource @Inject constructor (
+class NewsPagingSource (
     private val newsService: NewsService,val sourceId: String
     ) : PagingSource<Int, ArticlesItemModel>() {
 

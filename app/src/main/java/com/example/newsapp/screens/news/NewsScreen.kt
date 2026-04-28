@@ -1,6 +1,6 @@
 @file:Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
 
-package com.example.newsapp.Screens.News
+package com.example.newsapp.screens.news
 
 import com.example.domain.Utils.Base.Resource
 import android.content.Intent
@@ -53,14 +53,15 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.newsapp.ui.theme.gray
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.example.domain.Entities.News.ArticlesItemEntity
 import com.example.domain.Entities.News.SourcesItemEntity
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun NewsScreen(categoryApiId: String) {
-    val viewModel: NewsViewModel = hiltViewModel()
+fun NewsScreen(categoryApiId: String,navController: NavController) {
+    val viewModel: NewsViewModel = koinViewModel()
     Column(modifier = Modifier.fillMaxSize()) {
         var sourceId by remember { mutableStateOf("") }
         SourcesTabRow(categoryApiId = categoryApiId, viewModel = viewModel) {

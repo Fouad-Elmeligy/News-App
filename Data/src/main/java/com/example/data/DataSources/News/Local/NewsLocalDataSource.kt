@@ -6,8 +6,7 @@ import com.example.data.Mapper.News.toModel
 import com.example.domain.Entities.News.SourcesItemEntity
 import com.example.domain.Repositories.News.NewsLocalDataSource
 import com.example.domain.Utils.Base.Resource
-import javax.inject.Inject
-class NewsLocalDataSourceImpl @Inject constructor(private val roomDatabase: NewsAppDataBase): NewsLocalDataSource {
+class NewsLocalDataSourceImpl (private val roomDatabase: NewsAppDataBase): NewsLocalDataSource {
 
     override suspend fun getSources(categoryId: String): Resource<List<SourcesItemEntity>> {
        return try {
